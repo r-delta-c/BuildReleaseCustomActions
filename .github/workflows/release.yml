@@ -38,6 +38,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac
 
+      - name: Clone & Replace
+        run: |
+          cp raw/README.md README.md
+          sed -i -e "s/\$name/${{ vars.PACKAGE_NAME }}/g" README.md
+          sed -i -e "s/\$version/${{env.version}}/g" README.md
+
+      - name: Check for changes
+        run: git diff --quiet || echo "CHANGED=true" >> $GITHUB_ENV
+
+      - name: Commit & Push
+        if: env.CHANGED == 'true'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add README.md
+          git commit -m "Update README.md with version $version"
+          git push
+
       # Get the Package version based on the package.json file
       - name: Get Version
         id: version
@@ -97,24 +115,6 @@ jobs:
         uses: rickstaa/action-create-tag@88dbf7ff6fe2405f8e8f6c6fdfd78829bc631f83
         with:
           tag: "${{ env.version }}"
-
-      - name: Clone & Replace
-        run: |
-          cp raw/README.md README.md
-          sed -i -e "s/\$name/${{ vars.PACKAGE_NAME }}/g" README.md
-          sed -i -e "s/\$version/${{env.version}}/g" README.md
-
-      - name: Check for changes
-        run: git diff --quiet || echo "CHANGED=true" >> $GITHUB_ENV
-
-      - name: Commit & Push
-        if: env.CHANGED == 'true'
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add README.md
-          git commit -m "Update README.md with version $version"
-          git push
 
       # Publish the Release to GitHub
       - name: Make Release
