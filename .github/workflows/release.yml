@@ -83,9 +83,16 @@ jobs:
         with:
           package-path: ${{ env.unityPackage }}
           include-files: metaList
-      
+
+      - name: Check for Tag
+        uses: mukunku/tag-exists-action@v1.6.0
+        id: check-tag
+        with:
+          tag: '${{env.version}}'
+
       # Make a release tag of the version from the package.json file 
       - name: Create Tag
+        if: steps.check-tag.outputs.exists == 'true'
         id: tag_version
         uses: rickstaa/action-create-tag@88dbf7ff6fe2405f8e8f6c6fdfd78829bc631f83
         with:
