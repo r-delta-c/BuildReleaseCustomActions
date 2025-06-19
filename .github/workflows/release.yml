@@ -78,7 +78,6 @@ jobs:
           shopt -s extglob
           cp -r !(Packages) Packages/${{steps.id.outputs.value}}
           echo "packagePath=Packages/${{steps.id.outputs.value}}" >> $GITHUB_ENV
-          cp -r package.json Packages
 
       # Configure the Environment Variables needed for releasing the Package
       - name: Set Environment Variables
@@ -89,7 +88,7 @@ jobs:
 
       # Zip the Package for release
       - name: Create Package Zip
-        working-directory: "Packages"
+        working-directory: "${{ env.packagePath }}"
         run: zip -r "${{ github.workspace }}/${{ env.zipFile }}" .
       
       # Build a list of .meta files for future use
