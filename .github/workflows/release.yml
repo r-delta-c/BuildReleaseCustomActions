@@ -77,7 +77,7 @@ jobs:
           echo *
           shopt -s extglob
           cp -r !(Packages) Packages/${{steps.id.outputs.value}}
-          echo "packagePath=Packages" >> $GITHUB_ENV
+          echo "packagePath=Packages/${{steps.id.outputs.value}}" >> $GITHUB_ENV
 
       # Configure the Environment Variables needed for releasing the Package
       - name: Set Environment Variables
