@@ -60,7 +60,7 @@ jobs:
         run: |
           cp raw/README.md README.md
           sed -i -e "s/\$name/${{ vars.PACKAGE_NAME }}/g" README.md
-          sed -i -e "s/\$version/${{env.version}}/g" README.md
+          sed -i -e "s/\$version/${{ steps.version.outputs.value }}/g" README.md
 
       - name: Check for changes
         run: git diff --quiet || echo "CHANGED=true" >> $GITHUB_ENV
