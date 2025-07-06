@@ -58,7 +58,7 @@ jobs:
 
       - name: Clone & Replace
         run: |
-          cp raw/README.md README.md
+          rsync raw/README.md README.md
           sed -i -e "s/\$name/${{ vars.PACKAGE_NAME }}/g" README.md
           sed -i -e "s/\$version/${{ steps.version.outputs.value }}/g" README.md
 
@@ -79,7 +79,11 @@ jobs:
           mkdir -p Packages/${{steps.id.outputs.value}}
           echo *
           shopt -s extglob
-          cp -r !(Packages) Packages/${{steps.id.outputs.value}}
+          rsync -av \
+          --exclude="Packages" \
+          --exclude="raw/" \ 
+          --exclude="raw.meta" \ 
+          ./ Packages/${{steps.id.outputs.value}}
           echo "packagePath=Packages/${{steps.id.outputs.value}}" >> $GITHUB_ENV
 
       # Configure the Environment Variables needed for releasing the Package
