@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac
 
       # Get the Package version based on the package.json file
-      - name: Get Version
+      - name: Get VersionTTT
         id: version
         uses: zoexx/github-action-json-file-properties@b9f36ce6ee6fe2680cd3c32b2c62e22eade7e590
         with: 
@@ -80,6 +80,7 @@ jobs:
           echo *
           shopt -s extglob
           rsync -av \
+          --exclude ".*" \
           --exclude="Packages" \
           --exclude="raw/" \
           --exclude="raw.meta" \
