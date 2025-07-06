@@ -80,7 +80,7 @@ jobs:
           echo *
           shopt -s extglob
           rsync -av \
-          --exclude ".*" \
+          --exclude=".*" \
           --exclude="Packages" \
           --exclude="raw/" \
           --exclude="raw.meta" \
