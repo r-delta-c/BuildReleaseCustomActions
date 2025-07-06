@@ -58,7 +58,7 @@ jobs:
 
       - name: Clone & Replace
         run: |
-          rsync raw/README.md README.md
+          rsync .raw/README.md README.md
           sed -i -e "s/\$name/${{ vars.PACKAGE_NAME }}/g" README.md
           sed -i -e "s/\$version/${{ steps.version.outputs.value }}/g" README.md
 
