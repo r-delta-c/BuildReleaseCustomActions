@@ -15,7 +15,7 @@ jobs:
     - name: Validate Variable
       id: validate-variable
       run: |
-        if ["${{vars.PACKAGE_NAME}}" != ""]; then
+        if [["${{vars.PACKAGE_NAME}}" != ""]]; then
           echo "PackageName: ${{vars.PACKAGE_NAME}}"
         else
           echo "PACKAGE_NAME not configured in the variable."
