@@ -24,13 +24,13 @@ jobs:
 
     - name: Validate Reference Branch
       id: validate-reference-branch
-      uses: GuillaumeFalourd/branch-exsits@v1
+      uses: GuillaumeFalourd/branch-exists@v1
       with:
         branch: '${{vars.REF_BRANCH}}'
 
     - name: Branch existence result
       run: |
-        if ${{steps.validate-reference-branch.outputs.exsits == 'true'}}; then
+        if ${{steps.validate-reference-branch.outputs.exists == 'true'}}; then
           echo "RefBranch: ${{vars.REF_BRANCH}}"
         else
           echo "${{vars.REF_BRANCH}} does not exist."
