@@ -11,18 +11,30 @@ jobs:
   # Validate Repository Configuration
   config:
     runs-on: ubuntu-latest
-    outputs:
-      config_package: ${{ steps.config_package.outputs.configPackage }}
     steps:
-
-    # Ensure that required repository variable has been created for the Package
-    - name: Validate Package Config
-      id: config_package
+    - name: Validate Variable
+      id: validate-variable
       run: |
-        if [ "${{ vars.PACKAGE_NAME }}" != "" ]; then
-          echo "configPackage=true" >> $GITHUB_OUTPUT;
+        if ["${{vars.PACKAGE_NAME}}" != ""]; then
+          echo "PackageName: ${{vars.PACKAGE_NAME}}"
         else
-          echo "configPackage=false" >> $GITHUB_OUTPUT;
+          echo "PACKAGE_NAME not configured in the variable."
+          exit 1
+        fi
+
+    - name: Validate Reference Branch
+      id: validate-reference-branch
+      uses: GuillaumeFalourd/branch-exsits@v1
+      with:
+        branch: '${{vars.REF_BRANCH}}'
+
+    - name: Branch existence result
+      run: |
+        if ${{steps.validate-reference-branch.outputs.exsits == 'true'}}; then
+          echo "RefBranch: ${{vars.REF_BRANCH}}"
+        else
+          echo "${{vars.REF_BRANCH}} does not exist."
+          exit 1
         fi
 
   # Build and release the Package
@@ -34,15 +46,16 @@ jobs:
       contents: write
     env:
       packagePath: .
-    if: needs.config.outputs.config_package == 'true'
     steps:
 
       # Checkout Local Repository
       - name: Checkout
         uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac
+        with:
+          ref: ${{vars.REF_BRANCH}}
 
       # Get the Package version based on the package.json file
-      - name: Get VersionTTT
+      - name: Get Version
         id: version
         uses: zoexx/github-action-json-file-properties@b9f36ce6ee6fe2680cd3c32b2c62e22eade7e590
         with: 
@@ -71,7 +84,7 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add README.md
-          git commit -m "Update README.md with version $version"
+          git commit -m "Update README.md with version ${{steps.version.outputs.value}}"
           git push
 
       - name: Recreate folder structure
