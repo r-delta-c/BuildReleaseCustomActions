@@ -110,7 +110,7 @@ jobs:
             sed -i -e "s/\$name/${{ vars.PACKAGE_NAME }}/g" "$file"
             sed -i -e "s/\$version/${{ steps.version.outputs.value }}/g" "$file"
           done
-          rsync -av ${{ vars.WORK_DIRECTORY }}/work/ .
+          rsync -av ${{ vars.WORK_DIRECTORY }}/work/${{ vars.WORK_DIRECTORY }} .
           rm -rf ${{ vars.WORK_DIRECTORY }}/work/
           tree -a
           shopt -u dotglob
