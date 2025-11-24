@@ -102,7 +102,7 @@ jobs:
       - name: Clone & Replace
         if: needs.config.outputs.replaceFolder == 'true'
         run: |
-          rsync -av ${{ vars.WORK_DIRECTORY }} ${{ vars.WORK_DIRECTORY }}/work/
+          rsync -av ${{ vars.WORK_DIRECTORY }}/ ${{ vars.WORK_DIRECTORY }}/work/
           shopt -s dotglob
           tree -a
           find "${{ vars.WORK_DIRECTORY }}/work" -type f -print0 |
@@ -110,8 +110,8 @@ jobs:
             sed -i -e "s/\$name/${{ vars.PACKAGE_NAME }}/g" "$file"
             sed -i -e "s/\$version/${{ steps.version.outputs.value }}/g" "$file"
           done
-          rsync -av ${{ vars.WORK_DIRECTORY }}/work/${{ vars.WORK_DIRECTORY }} .
-          rm -rf ${{ vars.WORK_DIRECTORY }}/work/
+          rsync -av ${{ vars.WORK_DIRECTORY }}/work/ .
+          rm -rf ${{ vars.WORK_DIRECTORY }}/work
           tree -a
           shopt -u dotglob
 
