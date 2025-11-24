@@ -117,7 +117,12 @@ jobs:
 
       - name: Check for changes
         id: check-for-changes
-        run: git diff --quiet || echo "changed=true" >> $GITHUB_OUTPUT
+        run: |
+          if [[ -n "$(git status -- porcelain)" ]]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Commit & Push
         if: steps.check-for-changes.outputs.changed == 'true'
