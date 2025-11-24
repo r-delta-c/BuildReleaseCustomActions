@@ -103,18 +103,18 @@ jobs:
         if: needs.config.outputs.replaceFolder == 'true'
         run: |
           rsync -av ${{ vars.WORK_DIRECTORY }} ${{ vars.WORK_DIRECTORY }}/work/
-          tree
           shopt -s dotglob
+          tree -a
           for file in ${{ vars.WORK_DIRECTORY }}/work/*; do
             printf '%s\n' "$file"
             [ -e "$file"] || continue
             sed -i -e "s/\$name/${{ vars.PACKAGE_NAME }}/g" "$file"
             sed -i -e "s/\$version/${{ steps.version.outputs.value }}/g" "$file"
           done
-          shopt -u dotglob
           rsync -av ${{ vars.WORK_DIRECTORY }}/work/ .
           rm -rf ${{ vars.WORK_DIRECTORY }}/work/
-          tree
+          tree -a
+          shopt -u dotglob
 
       - name: Check for changes
         id: check-for-changes
