@@ -11,29 +11,43 @@ jobs:
   # Validate Repository Configuration
   config:
     runs-on: ubuntu-latest
+    outputs: 
+      replaceFolder: ${{ steps.validate-variable.outputs.replaceFolder }}
     steps:
     - name: Validate Variable
       id: validate-variable
       run: |
-        if [[ "${{vars.PACKAGE_NAME}}" != "" ]]; then
-          echo "PackageName: ${{vars.PACKAGE_NAME}}"
+        if [[ "${{ vars.PACKAGE_NAME }}" != "" ]]; then
+          printf "%s" "PackageName: ${{ vars.PACKAGE_NAME }}"
         else
-          echo "PACKAGE_NAME not configured in the variable."
+          printf "\e[31m%s\n\e[m" "PACKAGE_NAME not configured in the variable."
           exit 1
+        fi
+        if [[ "${{ vars.WORK_FOLDER }}" != "" ]]; then
+          if [[ -d "${{ vars.WORK_FOLDER }}" ]]; then
+            printf "%s" "WorkFolder: ${{ vars.WORK_FOLDER }}"
+            echo "replaceFolder=true" >> $GITHUB_OUTPUT
+          else
+            printf "\e[31m%s\n\e[m" "WORK_FOLDER not exist."
+            exit 1
+          fi
+        else
+          printf "%s" "WorkFolder: None!"
+          echo "replaceFolder=false" >> $GITHUB_OUTPUT
         fi
 
     - name: Validate Reference Branch
       id: validate-reference-branch
       uses: GuillaumeFalourd/branch-exists@v1
       with:
-        branch: '${{vars.REF_BRANCH}}'
+        branch: '${{ vars.REF_BRANCH }}'
 
     - name: Branch existence result
       run: |
         if ${{steps.validate-reference-branch.outputs.exists == 'true'}}; then
-          echo "RefBranch: ${{vars.REF_BRANCH}}"
+          printf "%s" "RefBranch: ${{ vars.REF_BRANCH }}"
         else
-          echo "${{vars.REF_BRANCH}} does not exist."
+          printf "\e[31m%s\n\e[m" "${{ vars.REF_BRANCH }} does not exist."
           exit 1
         fi
 
@@ -52,7 +66,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac
         with:
-          ref: ${{vars.REF_BRANCH}}
+          ref: ${{ vars.REF_BRANCH }}
 
       # Get the Package version based on the package.json file
       - name: Get Version
@@ -62,6 +76,17 @@ jobs:
             file_path: "${{ env.packagePath }}/package.json"
             prop_path: "version"
 
+      - name: Check for Tag
+        uses: mukunku/tag-exists-action@v1.6.0
+        id: check-tag
+        with:
+          tag: ${{ steps.version.outputs.value }}
+
+      - if: steps.check-tag.outputs.exists == 'true'
+        run: |
+          printf '%s' "Tag with the same version already exists"
+          exit 1
+
       - name: Get Id
         id: id
         uses: zoexx/github-action-json-file-properties@b9f36ce6ee6fe2680cd3c32b2c62e22eade7e590
@@ -70,26 +95,33 @@ jobs:
           prop_path: "name"
 
       - name: Clone & Replace
+        if: needs.config.outputs.replaceFolder == 'true'
         run: |
-          rsync -av .raw/README.md README.md
-          sed -i -e "s/\$name/${{ vars.PACKAGE_NAME }}/g" README.md
-          sed -i -e "s/\$version/${{ steps.version.outputs.value }}/g" README.md
+          rsync -av ${{ vars.WORK_FOLDER }} ${{ vars.WORK_FOLDER }}/work/
+          for file in ${{ vars.WORK_FOLDER }}/work/*; do
+            printf '%s' "$file"
+            [ -e "$file"] || continue
+            sed -i -e "s/\$name/${{ vars.PACKAGE_NAME }}/g" "$file"
+            sed -i -e "s/\$version/${{ steps.version.outputs.value }}/g" "$file"
+          done
+          rsync -av ${{ vars.WORK_FOLDER }} .
 
       - name: Check for changes
-        run: git diff --quiet || echo "CHANGED=true" >> $GITHUB_ENV
+        id: check-for-changes
+        run: git diff --quiet || echo "changed=true" >> $GITHUB_OUTPUT
 
       - name: Commit & Push
-        if: env.CHANGED == 'true'
+        if: ${{ steps.check-for-changes.outputs.changed }} == 'true'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add README.md
-          git commit -m "Update README.md with version ${{steps.version.outputs.value}}"
+          git commit -m "Update README.md with version ${{ steps.version.outputs.value }}"
           git push
 
       - name: Recreate folder structure
         run: |
-          mkdir -p Packages/${{steps.id.outputs.value}}
+          mkdir -p Packages/${{ steps.id.outputs.value }}
           echo *
           shopt -s extglob
           rsync -av \
@@ -97,15 +129,14 @@ jobs:
           --exclude="Packages" \
           --exclude="raw/" \
           --exclude="raw.meta" \
-          ./ ./Packages/${{steps.id.outputs.value}}
-          echo "packagePath=Packages/${{steps.id.outputs.value}}" >> $GITHUB_ENV
+          ./ ./Packages/${{ steps.id.outputs.value }}
+          echo "packagePath=Packages/${{ steps.id.outputs.value }}" >> $GITHUB_ENV
 
       # Configure the Environment Variables needed for releasing the Package
       - name: Set Environment Variables
         run: |
           echo "zipFile=${{ vars.PACKAGE_NAME }}-${{ steps.version.outputs.value }}".zip >> $GITHUB_ENV
           echo "unityPackage=${{ vars.PACKAGE_NAME }}-${{ steps.version.outputs.value }}.unitypackage" >> $GITHUB_ENV
-          echo "version=${{ steps.version.outputs.value }}" >> $GITHUB_ENV
 
       # Zip the Package for release
       - name: Create Package Zip
@@ -123,19 +154,12 @@ jobs:
           package-path: ${{ env.unityPackage }}
           include-files: metaList
 
-      - name: Check for Tag
-        uses: mukunku/tag-exists-action@v1.6.0
-        id: check-tag
-        with:
-          tag: '${{env.version}}'
-
       # Make a release tag of the version from the package.json file 
       - name: Create Tag
-        if: steps.check-tag.outputs.exists == 'false'
         id: tag_version
         uses: rickstaa/action-create-tag@88dbf7ff6fe2405f8e8f6c6fdfd78829bc631f83
         with:
-          tag: "${{ env.version }}"
+          tag: ${{ steps.version.outputs.value }}
 
       # Publish the Release to GitHub
       - name: Make Release
@@ -145,4 +169,4 @@ jobs:
             ${{ env.zipFile }}
             ${{ env.unityPackage }}
             ${{ env.packagePath }}/package.json
-          tag_name: ${{ env.version }}
+          tag_name: ${{ steps.version.outputs.value }}
