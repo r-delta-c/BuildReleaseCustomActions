@@ -118,7 +118,7 @@ jobs:
       - name: Check for changes
         id: check-for-changes
         run: |
-          if [[ -n "$(git status -- porcelain)" ]]; then
+          if [[ -n "$(git status --porcelain)" ]]; then
             echo "changed=true" >> $GITHUB_OUTPUT
           else
             echo "changed=false" >> $GITHUB_OUTPUT
