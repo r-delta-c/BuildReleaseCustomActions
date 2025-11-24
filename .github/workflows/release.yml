@@ -18,15 +18,15 @@ jobs:
       id: validate-variable
       run: |
         if [[ "${{ vars.PACKAGE_NAME }}" != "" ]]; then
-          printf "%s" "PackageName: ${{ vars.PACKAGE_NAME }}\n"
+          printf "%s" "PackageName: ${{ vars.PACKAGE_NAME }}%0A"
         else
-          printf "\e[31m%s\n\e[m" "PACKAGE_NAME not configured in the variable.\n"
+          printf "\e[31m%s\n\e[m" "PACKAGE_NAME not configured in the variable.%0A"
           exit 1
         fi
         if [[ "${{ vars.WORK_DIRECTORY }}" != "" ]]; then
           echo "replaceFolder=true" >> $GITHUB_OUTPUT
         else
-          printf "%s" "WorkFolder: None!\n"
+          printf "%s" "WorkFolder: None!%0A"
           echo "replaceFolder=false" >> $GITHUB_OUTPUT
         fi
 
@@ -39,9 +39,9 @@ jobs:
     - name: Branch Existence Result
       run: |
         if ${{steps.validate-reference-branch.outputs.exists == 'true'}}; then
-          printf "%s" "RefBranch: ${{ vars.REF_BRANCH }}\n"
+          printf "%s" "RefBranch: ${{ vars.REF_BRANCH }}%0A"
         else
-          printf "\e[31m%s\n\e[m" "${{ vars.REF_BRANCH }} does not exist.\n"
+          printf "\e[31m%s\n\e[m" "${{ vars.REF_BRANCH }} does not exist.%0A"
           exit 1
         fi
 
@@ -79,16 +79,16 @@ jobs:
       - name: Tag Exception
         if: steps.check-tag.outputs.exists == 'true'
         run: |
-          printf '%s' "Tag with the same version already exists\n"
+          printf '%s' "Tag with the same version already exists%0A"
           exit 1
 
       - name: Check for Work Directory
         if: needs.config.outputs.replaceFolder == 'true'
         run: |
           if [[ -d "${{ vars.WORK_DIRECTORY }}" ]]; then
-            printf "%s" "WorkFolder: ${{ vars.WORK_DIRECTORY }}\n"
+            printf "%s" "WorkFolder: ${{ vars.WORK_DIRECTORY }}%0A"
           else
-            printf "\e[31m%s\n\e[m" "WORK_DIRECTORY not exist.\n"
+            printf "\e[31m%s\n\e[m" "WORK_DIRECTORY not exist.%0A"
             exit 1
           fi
 
@@ -104,7 +104,7 @@ jobs:
         run: |
           rsync -av ${{ vars.WORK_DIRECTORY }} ${{ vars.WORK_DIRECTORY }}/work/
           for file in ${{ vars.WORK_DIRECTORY }}/work/*; do
-            printf '%s' "$file\n"
+            printf '%s' "$file%0A"
             [ -e "$file"] || continue
             sed -i -e "s/\$name/${{ vars.PACKAGE_NAME }}/g" "$file"
             sed -i -e "s/\$version/${{ steps.version.outputs.value }}/g" "$file"
