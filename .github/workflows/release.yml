@@ -18,21 +18,15 @@ jobs:
       id: validate-variable
       run: |
         if [[ "${{ vars.PACKAGE_NAME }}" != "" ]]; then
-          printf "%s" "PackageName: ${{ vars.PACKAGE_NAME }}"
+          printf "%s" "PackageName: ${{ vars.PACKAGE_NAME }}\n"
         else
-          printf "\e[31m%s\n\e[m" "PACKAGE_NAME not configured in the variable."
+          printf "\e[31m%s\n\e[m" "PACKAGE_NAME not configured in the variable.\n"
           exit 1
         fi
-        if [[ "${{ vars.WORK_FOLDER }}" != "" ]]; then
-          if [[ -d "${{ vars.WORK_FOLDER }}" ]]; then
-            printf "%s" "WorkFolder: ${{ vars.WORK_FOLDER }}"
-            echo "replaceFolder=true" >> $GITHUB_OUTPUT
-          else
-            printf "\e[31m%s\n\e[m" "WORK_FOLDER not exist."
-            exit 1
-          fi
+        if [[ "${{ vars.WORK_DIRECTORY }}" != "" ]]; then
+          echo "replaceFolder=true" >> $GITHUB_OUTPUT
         else
-          printf "%s" "WorkFolder: None!"
+          printf "%s" "WorkFolder: None!\n"
           echo "replaceFolder=false" >> $GITHUB_OUTPUT
         fi
 
@@ -42,12 +36,12 @@ jobs:
       with:
         branch: '${{ vars.REF_BRANCH }}'
 
-    - name: Branch existence result
+    - name: Branch Existence Result
       run: |
         if ${{steps.validate-reference-branch.outputs.exists == 'true'}}; then
-          printf "%s" "RefBranch: ${{ vars.REF_BRANCH }}"
+          printf "%s" "RefBranch: ${{ vars.REF_BRANCH }}\n"
         else
-          printf "\e[31m%s\n\e[m" "${{ vars.REF_BRANCH }} does not exist."
+          printf "\e[31m%s\n\e[m" "${{ vars.REF_BRANCH }} does not exist.\n"
           exit 1
         fi
 
@@ -82,10 +76,21 @@ jobs:
         with:
           tag: ${{ steps.version.outputs.value }}
 
-      - if: steps.check-tag.outputs.exists == 'true'
+      - name: Tag Exception
+        if: steps.check-tag.outputs.exists == 'true'
         run: |
-          printf '%s' "Tag with the same version already exists"
+          printf '%s' "Tag with the same version already exists\n"
           exit 1
+
+      - name: Check for Work Directory
+        if: needs.config.outputs.replaceFolder == 'true'
+        run: |
+          if [[ -d "${{ vars.WORK_DIRECTORY }}" ]]; then
+            printf "%s" "WorkFolder: ${{ vars.WORK_DIRECTORY }}\n"
+          else
+            printf "\e[31m%s\n\e[m" "WORK_DIRECTORY not exist.\n"
+            exit 1
+          fi
 
       - name: Get Id
         id: id
@@ -97,15 +102,15 @@ jobs:
       - name: Clone & Replace
         if: needs.config.outputs.replaceFolder == 'true'
         run: |
-          rsync -av ${{ vars.WORK_FOLDER }} ${{ vars.WORK_FOLDER }}/work/
-          for file in ${{ vars.WORK_FOLDER }}/work/*; do
-            printf '%s' "$file"
+          rsync -av ${{ vars.WORK_DIRECTORY }} ${{ vars.WORK_DIRECTORY }}/work/
+          for file in ${{ vars.WORK_DIRECTORY }}/work/*; do
+            printf '%s' "$file\n"
             [ -e "$file"] || continue
             sed -i -e "s/\$name/${{ vars.PACKAGE_NAME }}/g" "$file"
             sed -i -e "s/\$version/${{ steps.version.outputs.value }}/g" "$file"
           done
-          rsync -av ${{ vars.WORK_FOLDER }} .
-          rm -rf ${{ vars.WORK_FOLDER }}/work/
+          rsync -av ${{ vars.WORK_DIRECTORY }} .
+          rm -rf ${{ vars.WORK_DIRECTORY }}/work/
 
       - name: Check for changes
         id: check-for-changes
