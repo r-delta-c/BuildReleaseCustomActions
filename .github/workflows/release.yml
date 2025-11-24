@@ -105,6 +105,7 @@ jobs:
             sed -i -e "s/\$version/${{ steps.version.outputs.value }}/g" "$file"
           done
           rsync -av ${{ vars.WORK_FOLDER }} .
+          rm -rf ${{ vars.WORK_FOLDER }}/work/
 
       - name: Check for changes
         id: check-for-changes
@@ -115,8 +116,9 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add README.md
-          git commit -m "Update README.md with version ${{ steps.version.outputs.value }}"
+          git add -n .
+          git diff --name-only
+          git commit -m "Release ${{ steps.version.outputs.value }}"
           git push
 
       - name: Recreate folder structure
