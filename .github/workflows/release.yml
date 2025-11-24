@@ -103,6 +103,7 @@ jobs:
         if: needs.config.outputs.replaceFolder == 'true'
         run: |
           rsync -av ${{ vars.WORK_DIRECTORY }} ${{ vars.WORK_DIRECTORY }}/work/
+          tree
           for file in ${{ vars.WORK_DIRECTORY }}/work/*; do
             printf '%s\n' "$file"
             [ -e "$file"] || continue
@@ -111,6 +112,7 @@ jobs:
           done
           rsync -av ${{ vars.WORK_DIRECTORY }}/work/ .
           rm -rf ${{ vars.WORK_DIRECTORY }}/work/
+          tree
 
       - name: Check for changes
         id: check-for-changes
